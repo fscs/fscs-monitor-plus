@@ -1,12 +1,10 @@
-use domain::trains::TrainStation;
+use domain::{mensa::Mensa, trains::TrainStation};
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, Stylesheet, Title};
-use leptos_router::{
-    components::{Route, Router, Routes},
-    StaticSegment, WildcardSegment,
-};
+use mensa::MensaView;
 use trains::TrainView;
 pub(crate) mod domain;
+mod mensa;
 mod trains;
 
 #[component]
@@ -34,16 +32,26 @@ pub fn App() -> impl IntoView {
         id: 20018249,
     };
 
+    let essenmathnat = Mensa {
+        name: "Mensa Mathematik-Naturwissenschaften".to_string(),
+        speiseplan: Vec::new(),
+        id: "essenausgabe-sued-duesseldorf".to_string(),
+    };
+
     view! {
         <Stylesheet id="leptos" href="/pkg/fscs-monitor-plus.css"/>
 
         <Title text="Abfahrtsmonitor"/>
-        <div style="display: flex; flex-direction: row; flex-wrap: wrap; height: 100vh;">
+        <div id="trains" >
             <TrainView trainstation=trainstation/>
             <TrainView trainstation=trainstation2/>
             <TrainView trainstation=trainstation3/>
             <TrainView trainstation=trainstation4/>
         </div>
+        <div style="height: 20vh;">
+            <MensaView mensa=essenmathnat/>
+        </div>
+
     }
 }
 

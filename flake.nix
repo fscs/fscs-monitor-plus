@@ -27,7 +27,6 @@
       crane,
       fenix,
       flake-utils,
-      advisory-db,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
@@ -35,136 +34,66 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        inherit (pkgs) lib;
-
         craneLib = crane.mkLib pkgs;
-        src = craneLib.cleanCargoSource ./.;
+        src = ./.;
 
-        # Common arguments can be set here to avoid repeating them later
-        commonArgs = {
-          inherit src;
-          strictDeps = true;
+        cargoToml = builtins.fromTOML (builtins.readFile (self + /Cargo.toml));
+        inherit (cargoToml.package) name version;
 
-          buildInputs =
-            [
-              # Add additional build inputs here
-            ]
-            ++ lib.optionals pkgs.stdenv.isDarwin [
-              # Additional darwin specific inputs can be set here
-              pkgs.libiconv
+        tailwindcss = pkgs.nodePackages.tailwindcss.overrideAttrs (oa: {
+          plugins = [
+            pkgs.nodePackages."@tailwindcss/aspect-ratio"
+            pkgs.nodePackages."@tailwindcss/forms"
+            pkgs.nodePackages."@tailwindcss/language-server"
+            pkgs.nodePackages."@tailwindcss/line-clamp"
+            pkgs.nodePackages."@tailwindcss/typography"
+          ];
+        });
+
+        # Crane builder for cargo-leptos projects
+        craneBuild = rec {
+          args = {
+            inherit src;
+            pname = name;
+            version = version;
+            buildInputs = [
+              pkgs.cargo-leptos
+              pkgs.binaryen # Provides wasm-opt
+              pkgs.pkg-config
+              pkgs.openssl.dev
+              pkgs.gcc
+              pkgs.lld
+              tailwindcss
             ];
-
-          # Additional environment variables can be set directly
-          # MY_CUSTOM_VAR = "some value";
-        };
-
-        craneLibLLvmTools = craneLib.overrideToolchain (
-          fenix.packages.${system}.complete.withComponents [
-            "cargo"
-            "llvm-tools"
-            "rustc"
-          ]
-        );
-
-        # Build *just* the cargo dependencies, so we can reuse
-        # all of that work (e.g. via cachix) when running in CI
-        cargoArtifacts = craneLib.buildDepsOnly commonArgs;
-
-        # Build the actual crate itself, reusing the dependency
-        # artifacts from above.
-        my-crate = craneLib.buildPackage (
-          commonArgs
-          // {
+          };
+          cargoArtifacts = craneLib.buildDepsOnly args;
+          buildArgs = args // {
             inherit cargoArtifacts;
-          }
-        );
+            buildPhaseCargoCommand = ''
+              cargoBuildLog=$(mktemp cargoBuildLogXXXX.json)
+              cargo leptos build --release -vvv > "$cargoBuildLog"
+            '';
+            nativeBuildInputs = [
+              pkgs.pkg-config
+              pkgs.makeWrapper
+            ];
+            installPhaseCommand = ''
+              mkdir -p $out/bin
+              cp target/release/${name} $out/bin/
+              cp -r target/site/ $out/bin/
+              wrapProgram $out/bin/${name} \
+                --set LEPTOS_SITE_ROOT $out/bin/site
+            '';
+          };
+          package = craneLib.buildPackage buildArgs;
+        };
       in
       {
-        checks = {
-          # Build the crate as part of `nix flake check` for convenience
-          inherit my-crate;
-
-          # Run clippy (and deny all warnings) on the crate source,
-          # again, reusing the dependency artifacts from above.
-          #
-          # Note that this is done as a separate derivation so that
-          # we can block the CI if there are issues here, but not
-          # prevent downstream consumers from building our crate by itself.
-          my-crate-clippy = craneLib.cargoClippy (
-            commonArgs
-            // {
-              inherit cargoArtifacts;
-              cargoClippyExtraArgs = "--all-targets -- --deny warnings";
-            }
-          );
-
-          my-crate-doc = craneLib.cargoDoc (
-            commonArgs
-            // {
-              inherit cargoArtifacts;
-            }
-          );
-
-          # Check formatting
-          my-crate-fmt = craneLib.cargoFmt {
-            inherit src;
-          };
-
-          my-crate-toml-fmt = craneLib.taploFmt {
-            src = pkgs.lib.sources.sourceFilesBySuffices src [ ".toml" ];
-            # taplo arguments can be further customized below as needed
-            # taploExtraArgs = "--config ./taplo.toml";
-          };
-
-          # Audit dependencies
-          my-crate-audit = craneLib.cargoAudit {
-            inherit src advisory-db;
-          };
-
-          # Audit licenses
-          my-crate-deny = craneLib.cargoDeny {
-            inherit src;
-          };
-
-          # Run tests with cargo-nextest
-          # Consider setting `doCheck = false` on `my-crate` if you do not want
-          # the tests to run twice
-          my-crate-nextest = craneLib.cargoNextest (
-            commonArgs
-            // {
-              inherit cargoArtifacts;
-              partitions = 1;
-              partitionType = "count";
-              cargoNextestPartitionsExtraArgs = "--no-tests=pass";
-            }
-          );
-        };
-
-        packages =
-          {
-            default = my-crate;
-          }
-          // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-            my-crate-llvm-coverage = craneLibLLvmTools.cargoLlvmCov (
-              commonArgs
-              // {
-                inherit cargoArtifacts;
-              }
-            );
-          };
-
-        apps.default = flake-utils.lib.mkApp {
-          drv = my-crate;
+        packages = {
+          default = craneBuild.package;
         };
 
         devShells.default = craneLib.devShell {
-          # Inherit inputs from checks.
-          checks = self.checks.${system};
-
-          # Additional dev-shell environment variables can be set directly
-          # MY_CUSTOM_DEVELOPMENT_VAR = "something else";
-
-          # Extra inputs can be added here; cargo and rustc are provided by default.
           packages = [
             pkgs.cargo
             pkgs.gcc

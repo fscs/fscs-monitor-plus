@@ -33,7 +33,6 @@ pub async fn get_trains(id: u64, limit: u64) -> Result<Vec<Train>, ServerFnError
     let now = chrono::Local::now();
     let offset = now.offset().local_minus_utc();
     let now = NaiveDateTime::from_timestamp(now.timestamp() + (offset as i64), 0);
-    println!("now: {}", now);
 
     for departure in departure_list.as_array().unwrap() {
         let serving_line = &departure["servingLine"];
@@ -97,6 +96,8 @@ pub async fn get_trains(id: u64, limit: u64) -> Result<Vec<Train>, ServerFnError
         }
         a.minutes_till_departure.cmp(&b.minutes_till_departure)
     });
+
+    trains.truncate(10);
 
     Ok(trains)
 }
