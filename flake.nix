@@ -82,7 +82,8 @@
               cp target/release/${name} $out/bin/
               cp -r target/site/ $out/bin/
               wrapProgram $out/bin/${name} \
-                --set LEPTOS_SITE_ROOT $out/bin/site
+                --set LEPTOS_SITE_ROOT $out/bin/site \
+                --set LEPTOS_SITE_ADDR 0.0.0.0:8080
             '';
           };
           package = craneLib.buildPackage buildArgs;
