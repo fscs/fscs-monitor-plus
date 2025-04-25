@@ -6,23 +6,26 @@ use leptos::{logging::log, prelude::*, task::spawn_local};
 #[component]
 pub fn TrainView(trainstation: TrainStation) -> impl IntoView {
     let (trains, set_trains) = signal(Vec::new());
-    set_interval(
-        move || {
-            spawn_local(async move {
+    Effect::new(move || {
+        set_interval(
+            move || {
                 log!("Fetching trains data...");
-                let data = domain::trains::get_trains(trainstation.id, 200).await;
-                match data {
-                    Ok(data) => {
-                        set_trains.set(data);
+                spawn_local(async move {
+                    let data = domain::trains::get_trains(trainstation.id, 200).await;
+                    match data {
+                        Ok(data) => {
+                            set_trains.set(data);
+                        }
+                        Err(e) => {
+                            log!("Error fetching trains: {:?}", e);
+                        }
                     }
-                    Err(e) => {
-                        log!("Error fetching trains: {:?}", e);
-                    }
-                }
-            });
-        },
-        Duration::from_secs(60),
-    );
+                });
+            },
+            Duration::from_secs(5),
+        );
+    });
+
     view! {
         <div style="width: 50%; height: 50%; overflow:hidden;">
         <h1>{trainstation.name}</h1>
