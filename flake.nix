@@ -69,14 +69,17 @@
           cargoArtifacts = craneLib.buildDepsOnly args;
           buildArgs = args // {
             inherit cargoArtifacts;
+
             buildPhaseCargoCommand = ''
               cargoBuildLog=$(mktemp cargoBuildLogXXXX.json)
               cargo leptos build --release -vvv > "$cargoBuildLog"
             '';
+
             nativeBuildInputs = [
               pkgs.pkg-config
               pkgs.makeWrapper
             ];
+
             installPhaseCommand = ''
               mkdir -p $out/bin
               cp target/release/${name} $out/bin/
@@ -85,6 +88,8 @@
                 --set LEPTOS_SITE_ROOT $out/bin/site \
                 --set LEPTOS_SITE_ADDR 0.0.0.0:8080
             '';
+
+            meta.mainProgram = "fscs-monitor-plus";
           };
           package = craneLib.buildPackage buildArgs;
         };
@@ -93,8 +98,6 @@
         packages = {
           default = craneBuild.package;
         };
-
-        meta.mainProgram = "fscs-monitor-plus";
 
         devShells.default = craneLib.devShell {
           packages = [
