@@ -94,6 +94,8 @@
           default = craneBuild.package;
         };
 
+        meta.mainProgram = "fscs-monitor-plus";
+
         devShells.default = craneLib.devShell {
           packages = [
             pkgs.cargo
