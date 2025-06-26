@@ -1,8 +1,10 @@
+use calendar::{Calendar, CalendarStruct};
 use domain::{mensa::Mensa, trains::TrainStation};
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, Stylesheet, Title};
 use mensa::MensaView;
 use trains::TrainView;
+mod calendar;
 pub(crate) mod domain;
 mod mensa;
 mod trains;
@@ -38,18 +40,34 @@ pub fn App() -> impl IntoView {
         id: "essenausgabe-sued-duesseldorf".to_string(),
     };
 
+    let fscsCalendar = CalendarStruct {
+        name: "FSCS Kalender".to_string(),
+        url: "https://nextcloud.phynix-hhu.de/remote.php/dav/public-calendars/CAx5MEp7cGrQ6cEe?export"
+            .to_string(),
+    };
+
     view! {
         <Stylesheet id="leptos" href="/pkg/fscs-monitor-plus.css"/>
 
         <Title text="Abfahrtsmonitor"/>
-        <div id="trains" >
-            <TrainView trainstation=trainstation/>
-            <TrainView trainstation=trainstation2/>
-            <TrainView trainstation=trainstation3/>
-            <TrainView trainstation=trainstation4/>
+        <div style="height: 5vh; width: 100vw; display: flex; justify-content: center; align-items: center;">
+            <h1 style="font-size: 1.8vw; font-weight: 400;">{{move || chrono::Local::now().format("%d.%m.%Y %H:%M").to_string()}}</h1>
         </div>
-        <div style="height: 20vh;">
-            <MensaView mensa=essenmathnat/>
+        <div style="display: flex; flex-direction: row; height: 95vh; overflow: hidden;">
+            <div>
+                <div id="trains" >
+                    <TrainView trainstation=trainstation/>
+                    <TrainView trainstation=trainstation2/>
+                    <TrainView trainstation=trainstation3/>
+                    <TrainView trainstation=trainstation4/>
+                </div>
+                <div style="height: 25vh;">
+                    <MensaView mensa=essenmathnat/>
+                </div>
+            </div>
+            <div style="height: 100vh; width: 30vw; overflow: hidden;">
+                <Calendar calendars=vec![fscsCalendar]/>
+            </div>
         </div>
 
     }

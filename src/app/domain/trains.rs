@@ -79,8 +79,20 @@ pub async fn get_trains(id: u64, limit: u64) -> Result<Vec<Train>, ServerFnError
             delay = None;
         }
 
+        let mut replaced = serving_line["number"].as_str().unwrap().to_string();
+        if let Some(start) = serving_line["number"].as_str().unwrap().find('(') {
+            if let Some(end) = serving_line["number"].as_str().unwrap()[start..].find(')') {
+                let end = start + end;
+                replaced = format!(
+                    "{}{}",
+                    &serving_line["number"].as_str().unwrap()[..start],
+                    &serving_line["number"].as_str().unwrap()[end + 1..]
+                );
+            }
+        }
+
         let train = Train {
-            line: serving_line["number"].as_str().unwrap().to_string(),
+            line: replaced,
             direction: serving_line["direction"].as_str().unwrap().to_string(),
             minutes_till_departure: minutes_till_departure.num_minutes() as u64,
             delay,

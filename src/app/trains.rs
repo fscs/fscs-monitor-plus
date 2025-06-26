@@ -46,9 +46,9 @@ pub fn TrainView(trainstation: TrainStation) -> impl IntoView {
                             let delay = format!("(+{}) {}m", train.delay.unwrap(), train.minutes_till_departure.clone());
                             view! {
                                 <tr style="white-space: nowrap">
-                                    <th style="color:#f00; text-align:left;">{train.line.clone()}</th>
-                                    <th style="color:#f00; text-align:left; line-height:1; max-width:25vw; overflow=hidden;">{train.direction.clone()}</th>
-                                    <th style="color:#f00; text-align:right;">{delay}</th>
+                                    <th style="color:#ff0; text-align:left;">{train.line.clone()}</th>
+                                    <th style="color:#ff0; text-align:left; line-height:1; max-width:25vw; overflow=hidden;">{train.direction.clone()}</th>
+                                    <th style="color:#ff0; text-align:right;">{delay}</th>
                                 </tr>
                             }
                         }

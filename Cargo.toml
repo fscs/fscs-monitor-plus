@@ -21,6 +21,7 @@ serde_json = { version = "1", features = [ "raw_value", ] }
 chrono = { version = "0.4", features = ["serde"] }
 anyhow = { version = "1.0" }
 scraper = "0.23"
+icalendar = "0.16.0"
 
 [features]
 csr = ["leptos/csr"]

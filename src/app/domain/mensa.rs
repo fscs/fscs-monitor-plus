@@ -57,6 +57,8 @@ pub async fn get_essen(id: String) -> Result<Vec<Essen>, ServerFnError> {
         r#"div[data-date="{}"]"#,
         date.format("%d.%m.%Y").to_string()
     );
+    log!("Fetching mensa data for date: {}", date_selector);
+
     let date_selector = Selector::parse(&date_selector).unwrap();
 
     let mut essen = Vec::new();

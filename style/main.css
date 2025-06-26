@@ -40,6 +40,13 @@ table {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  height: 80vh;
+  height: 70vh;
   border-bottom: 2px solid #ccc;
+  border-right: 2px solid #ccc;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
