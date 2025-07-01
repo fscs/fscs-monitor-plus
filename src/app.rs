@@ -46,12 +46,22 @@ pub fn App() -> impl IntoView {
             .to_string(),
     };
 
+    let (time, set_time) = signal(chrono::Local::now().format("%d.%m.%Y %H:%M").to_string());
+    Effect::new(move || {
+        set_interval(
+            move || {
+                set_time.set(chrono::Local::now().format("%d.%m.%Y %H:%M").to_string());
+            },
+            std::time::Duration::from_secs(60),
+        );
+    });
+
     view! {
         <Stylesheet id="leptos" href="/pkg/fscs-monitor-plus.css"/>
 
         <Title text="Abfahrtsmonitor"/>
         <div style="height: 5vh; width: 100vw; display: flex; justify-content: center; align-items: center;">
-            <h1 style="font-size: 1.8vw; font-weight: 400;">{{move || chrono::Local::now().format("%d.%m.%Y %H:%M").to_string()}}</h1>
+            <h1 style="font-size: 1.8vw; font-weight: 400;">{{move || time.get()}}</h1>
         </div>
         <div style="display: flex; flex-direction: row; height: 95vh; overflow: hidden;">
             <div>
